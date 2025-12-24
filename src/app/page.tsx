@@ -1,3 +1,5 @@
+"use client"
+
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -5,9 +7,12 @@ import {
   CardDescription,
   CardTitle,
 } from "@/components/ui/card";
+import { PostService } from "@/services/post.service";
+import { supabase } from "@/supabase-client";
 import { CalendarDays, Clock, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface Post {
   id: string;
@@ -21,113 +26,28 @@ interface Post {
   fullContent: string;
 }
 
-// Posts mockados
-export const mockPosts: Post[] = [
-  {
-    id: "1",
-    title: "Getting Started with Next.js 14",
-    content: "Learn how to build modern web applications with Next.js 14 and its latest features including App Router, Server Components, and improved performance.",
-    urlImage: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1200&h=600&fit=crop",
-    author: "Wesley Dev",
-    publishedAt: "Aug 4, 2025",
-    readTime: "5 min read",
-    tags: ["Next.js", "React", "Development", "TypeScript"],
-    fullContent: `
-      <h2>Introduction to Next.js 14</h2>
-      <p>Next.js 14 brings significant improvements to the React development experience with enhanced App Router capabilities, improved Server Components, and better performance optimizations.</p>
-      
-      <h3>Key Features</h3>
-      <ul>
-        <li><strong>App Router:</strong> The new routing system provides better performance and developer experience</li>
-        <li><strong>Server Components:</strong> Improved server-side rendering capabilities</li>
-        <li><strong>Turbopack:</strong> Faster build times and hot reload</li>
-        <li><strong>Improved TypeScript support:</strong> Better type safety and IntelliSense</li>
-      </ul>
-      
-      <h3>Getting Started</h3>
-      <p>To create a new Next.js 14 project, you can use the following command:</p>
-      <pre><code>npx create-next-app@latest my-app --typescript --tailwind --eslint</code></pre>
-      
-      <h3>Conclusion</h3>
-      <p>Next.js 14 represents a significant step forward in React development, offering improved performance, better developer experience, and more powerful features for building modern web applications.</p>
-    `
-  },
-  {
-    id: "2",
-    title: "Mastering TypeScript in 2025",
-    content: "Dive deep into TypeScript's advanced features and learn how to write type-safe code that scales with your applications.",
-    urlImage: "https://images.unsplash.com/photo-1516259762381-22954d7d3ad2?w=1200&h=600&fit=crop",
-    author: "Ana Silva",
-    publishedAt: "Aug 3, 2025",
-    readTime: "8 min read",
-    tags: ["TypeScript", "JavaScript", "Programming", "Development"],
-    fullContent: `
-      <h2>Advanced TypeScript Features</h2>
-      <p>TypeScript has evolved significantly, offering powerful features that help developers write more maintainable and type-safe code.</p>
-      
-      <h3>Utility Types</h3>
-      <p>TypeScript provides several utility types that help transform types:</p>
-      <ul>
-        <li><strong>Partial&lt;T&gt;:</strong> Makes all properties optional</li>
-        <li><strong>Required&lt;T&gt;:</strong> Makes all properties required</li>
-        <li><strong>Pick&lt;T, K&gt;:</strong> Creates a type with selected properties</li>
-        <li><strong>Omit&lt;T, K&gt;:</strong> Creates a type without certain properties</li>
-      </ul>
-      
-      <h3>Template Literal Types</h3>
-      <p>One of the most powerful features introduced in recent versions:</p>
-      <pre><code>type Color = "red" | "blue" | "green"
-type Size = "small" | "medium" | "large"
-type ClassName = \`\${Color}-\${Size}\`</code></pre>
-      
-      <h3>Best Practices</h3>
-      <p>Following these practices will help you write better TypeScript code and avoid common pitfalls.</p>
-    `
-  },
-  {
-    id: "3",
-    title: "Building APIs with Supabase",
-    content: "Discover how to create powerful backend APIs using Supabase's real-time database, authentication, and edge functions.",
-    urlImage: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&h=600&fit=crop",
-    author: "Carlos Santos",
-    publishedAt: "Aug 2, 2025",
-    readTime: "12 min read",
-    tags: ["Supabase", "API", "Database", "Backend"],
-    fullContent: `
-      <h2>Getting Started with Supabase</h2>
-      <p>Supabase is an open-source Firebase alternative that provides a complete backend solution with PostgreSQL database, authentication, and real-time capabilities.</p>
-      
-      <h3>Setting Up Your Project</h3>
-      <p>Create a new Supabase project and install the client library:</p>
-      <pre><code>npm install @supabase/supabase-js</code></pre>
-      
-      <h3>Database Operations</h3>
-      <p>Supabase provides a simple API for database operations:</p>
-      <ul>
-        <li><strong>Insert:</strong> Add new records to your tables</li>
-        <li><strong>Select:</strong> Query data with filters and joins</li>
-        <li><strong>Update:</strong> Modify existing records</li>
-        <li><strong>Delete:</strong> Remove records from tables</li>
-      </ul>
-      
-      <h3>Real-time Features</h3>
-      <p>One of Supabase's standout features is real-time subscriptions:</p>
-      <pre><code>const subscription = supabase
-  .from('posts')
-  .on('INSERT', payload => {
-    console.log('New post:', payload.new)
-  })
-  .subscribe()</code></pre>
-      
-      <h3>Authentication</h3>
-      <p>Supabase provides built-in authentication with multiple providers and easy-to-use APIs for managing user sessions.</p>
-    `
-  }
-];
-
 export default function Home() {
-  const posts = mockPosts;
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true); 
 
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        const supabasePosts = await PostService.getAllPosts();
+        const formattedPosts = supabasePosts.map(PostService.formatPostForApp);
+        setPosts(formattedPosts);
+      } catch (error) {
+        console.error("Erro ao carregar posts: ", error);
+        setPosts([]);
+      } finally {
+        setIsLoading(false); 
+      }
+    }
+
+    loadPosts();
+  }, []);
+  
+  
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
       {/* Header */}
@@ -170,7 +90,7 @@ export default function Home() {
                       <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mb-4">
                         <div className="flex items-center gap-1">
                           <CalendarDays className="h-4 w-4" />
-                          <span>Aug 4, 2025</span>
+                          <span>Dez 24, 2025</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
