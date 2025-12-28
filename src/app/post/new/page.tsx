@@ -9,11 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, X, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { usePosts } from "../../../contexts/PostContext";
+import { PostService } from "@/services/post.service";
 
 export default function CreatePost() {
   const router = useRouter();
-  const { addPost } = usePosts();
   const [isLoading, setIsLoading] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
@@ -58,22 +57,16 @@ export default function CreatePost() {
     setIsLoading(true);
 
     try {
-      // Simular delay de criação
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Adicionar o post usando o contexto
-      addPost({
+      await PostService.createPost({
         title: formData.title,
         content: formData.content,
-        urlImage: formData.urlImage,
-        author: formData.author,
-        readTime: formData.readTime,
+        url_image: formData.urlImage || null,  
+        read_time: formData.readTime,
         tags: tags,
-        fullContent: formData.fullContent
+        full_content: formData.fullContent
       });
-
-      // Redirecionar para a home
       router.push("/");
+      router.refresh();
     } catch (error) {
       console.error("Erro ao criar post:", error);
     } finally {

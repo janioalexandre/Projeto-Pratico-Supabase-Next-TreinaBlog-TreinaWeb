@@ -1,5 +1,5 @@
 import { supabase } from "@/supabase-client";
-import { Post } from "@/types/types";
+import { Post, PostInsert } from "@/types/types";
 
 export class PostService{
     static async getAllPosts(): Promise<Post[]>{
@@ -15,6 +15,22 @@ export class PostService{
         
         return data || []
     }
+
+    static async createPost(post: Omit<PostInsert, "author">): Promise<Post> {
+      const { data, error } = await supabase
+        .from("posts")
+        .insert([{ ...post }])
+        .select('*, usuarios:author (id, name, email)')
+        .single();
+      
+        if (error) {
+          console.error("Erro ao criar post:", error.message);
+          throw error;
+        }
+
+      return data;
+
+    } 
 
     static formatPostForApp(post: any) {
     return {
